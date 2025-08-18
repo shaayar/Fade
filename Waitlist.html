@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fade - Secure Private Messaging</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://getlaunchlist.com/js/widget.js" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        midnight: {
+                            900: '#0B1426',
+                            800: '#1E2A4A',
+                        },
+                        cyan: {
+                            500: '#00D4FF',
+                            400: '#64E9FF',
+                        },
+                        purple: {
+                            600: '#8B5FBF',
+                            700: '#6B46C1',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            background: linear-gradient(135deg, #0B1426 0%, #1E2A4A 100%);
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .glass {
+            background: rgba(30, 42, 74, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(92, 115, 180, 0.2);
+        }
+        
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 212, 255, 0.1), 0 10px 10px -5px rgba(0, 212, 255, 0.04);
+        }
+        
+        .cta-button {
+            background: linear-gradient(90deg, #00D4FF 0%, #64E9FF 100%);
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5);
+        }
+        
+        .disappearing-text {
+            animation: disappear 5s infinite;
+        }
+        
+        @keyframes disappear {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .typing-indicator span {
+            animation: typing 1.5s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        .gradient-border {
+            position: relative;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0B1426, #1E2A4A);
+            padding: 2px;
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: -1;
+            margin: -2px;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #00D4FF, #6B46C1);
+        }
+        
+        .hero-pattern {
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 95, 191, 0.1) 0%, transparent 20%);
+        }
+        
+        .security-badge {
+            transition: all 0.3s ease;
+        }
+        
+        .security-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 py-4 px-6 glass">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 flex items-center justify-center">
+                    <i class="fas fa-lock text-white"></i>
+                </div>
+                <span class="text-xl font-bold">Fade</span>
+            </div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#features" class="hover:text-cyan-400 transition">Features</a>
+                <a href="#usecases" class="hover:text-cyan-400 transition">Use Cases</a>
+                <a href="#security" class="hover:text-cyan-400 transition">Security</a>
+                <a href="#waitlist" class="hover:text-cyan-400 transition">Join Waitlist</a>
+            </div>
+            <button class="md:hidden text-xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-pattern min-h-screen flex items-center pt-[16vh] pb-20 px-8">
+        <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+            <div class="fade-up">
+                <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">
+                    Some conversations <span class="text-cyan-400">deserve</span> to disappear
+                </h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-2xl">
+                    Fade ensures your private conversations automatically vanish after reading. 
+                    Military-grade encryption keeps your words safe, always.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <button class="cta-button text-midnight-900 font-bold py-4 px-8 rounded-lg text-lg">
+                        Join the Waitlist
+                    </button>
+                    <button class="glass border border-cyan-500/30 py-4 px-8 rounded-lg text-lg hover:bg-cyan-500/10 transition">
+                        Learn More
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2 text-gray-400">
+                    <div class="flex -space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-cyan-500"></div>
+                        <div class="w-8 h-8 rounded-full bg-purple-600"></div>
+                        <div class="w-8 h-8 rounded-full bg-gray-700"></div>
+                    </div>
+                    <span>10,000+ on waitlist • Trusted by privacy experts</span>
+                </div>
+            </div>
+            <div class="relative fade-up">
+                <div class="absolute -top-10 -right-10 w-64 h-64 bg-purple-700 rounded-full mix-blend-soft-light filter blur-3xl opacity-70 animate-pulse-slow"></div>
+                <div class="absolute -bottom-10 -left-10 w-64 h-64 bg-cyan-500 rounded-full mix-blend-soft-light filter blur-3xl opacity-50 animate-pulse-slow"></div>
+                <div class="relative glass rounded-2xl p-6 border border-cyan-500/20">
+                    <div class="flex items-center mb-4">
+                        <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-start">
+                            <div class="bg-gray-700 rounded-2xl rounded-bl-none px-4 py-3 max-w-xs">
+                                Hey, I've been wanting to talk to you about something important...
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <div class="bg-gradient-to-r from-cyan-600 to-purple-600 rounded-2xl rounded-br-none px-4 py-3 max-w-xs">
+                                What's on your mind? I'm here for you.
+                            </div>
+                        </div>
+                        <div class="flex justify-start">
+                            <div class="bg-gray-700 rounded-2xl rounded-bl-none px-4 py-3 max-w-xs disappearing-text">
+                                I've been struggling with anxiety lately and it's been affecting my work...
+                            </div>
+                        </div>
+                        <div class="typing-indicator flex space-x-1 ml-4">
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="py-20 px-7 bg-midnight-900/50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">We've all been there...</h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Deleting messages, using code words, avoiding certain topics entirely. 
+                    Digital privacy shouldn't require constant vigilance.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass rounded-2xl p-8 fade-up">
+                    <div class="text-cyan-400 text-4xl mb-4">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Deleting Messages</h3>
+                    <p class="text-gray-300">
+                        Constantly cleaning up conversations, hoping you didn't miss anything important.
+                    </p>
+                </div>
+                <div class="glass rounded-2xl p-8 fade-up">
+                    <div class="text-cyan-400 text-4xl mb-4">
+                        <i class="fas fa-user-secret"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Privacy Anxiety</h3>
+                    <p class="text-gray-300">
+                        Worrying who might see your messages in the future or if they're truly secure.
+                    </p>
+                </div>
+                <div class="glass rounded-2xl p-8 fade-up">
+                    <div class="text-cyan-400 text-4xl mb-4">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Digital Baggage</h3>
+                    <p class="text-gray-300">
+                        Lingering conversations that hold you back or create unnecessary complications.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">Our Privacy Promise</h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Three core features that make Fade the most secure messaging experience.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="feature-card glass rounded-2xl p-8 border border-cyan-500/20">
+                    <div class="text-cyan-400 text-5xl mb-6">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Auto-Disappearing Messages</h3>
+                    <p class="text-gray-300 mb-6">
+                        Read it. React to it. It's gone. Set timers from 1 second to 24 hours.
+                    </p>
+                    <div class="relative h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full w-1/3 animate-pulse-slow"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-400 mt-2">
+                        <span>0s</span>
+                        <span>30s</span>
+                        <span>1m</span>
+                        <span>5m</span>
+                        <span>1h</span>
+                        <span>24h</span>
+                    </div>
+                </div>
+                <div class="feature-card glass rounded-2xl p-8 border border-cyan-500/20">
+                    <div class="text-cyan-400 text-5xl mb-6">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Military-Grade Encryption</h3>
+                    <p class="text-gray-300 mb-6">
+                        Your words are encrypted before they leave your phone. End-to-end, always.
+                    </p>
+                    <div class="flex items-center justify-center mt-6">
+                        <div class="relative">
+                            <div class="w-24 h-24 rounded-full border-4 border-cyan-500 flex items-center justify-center">
+                                <i class="fas fa-lock text-3xl text-cyan-400"></i>
+                            </div>
+                            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature-card glass rounded-2xl p-8 border border-cyan-500/20">
+                    <div class="text-cyan-400 text-5xl mb-6">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Recovery When Needed</h3>
+                    <p class="text-gray-300 mb-6">
+                        Lost something important? We can help, but only you can request it.
+                    </p>
+                    <div class="flex items-center justify-center mt-6">
+                        <div class="relative">
+                            <div class="w-20 h-24 bg-gradient-to-b from-gray-700 to-gray-800 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-vault text-3xl text-purple-400"></i>
+                            </div>
+                            <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-cyan-500 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section id="usecases" class="py-20 px-6 bg-midnight-900/50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">Designed for Real Moments</h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Fade empowers you to have the conversations that matter without digital consequences.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="glass rounded-2xl p-6 fade-up">
+                    <div class="text-cyan-400 text-3xl mb-4">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Therapy & Mental Health</h3>
+                    <p class="text-gray-300">
+                        Discuss your struggles without digital baggage.
+                    </p>
+                </div>
+                <div class="glass rounded-2xl p-6 fade-up">
+                    <div class="text-cyan-400 text-3xl mb-4">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Intimate Relationships</h3>
+                    <p class="text-gray-300">
+                        Love letters that don't last forever.
+                    </p>
+                </div>
+                <div class="glass rounded-2xl p-6 fade-up">
+                    <div class="text-cyan-400 text-3xl mb-4">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Family Dynamics</h3>
+                    <p class="text-gray-300">
+                        Navigate difficult conversations safely.
+                    </p>
+                </div>
+                <div class="glass rounded-2xl p-6 fade-up">
+                    <div class="text-cyan-400 text-3xl mb-4">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Creative Ideas</h3>
+                    <p class="text-gray-300">
+                        Share your million-dollar idea without fear.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Section -->
+    <section id="security" class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">Built for Trust</h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    We take security seriously. Here's how we protect your privacy.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="fade-up">
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-bold mb-4">Open Source & Transparent</h3>
+                        <p class="text-gray-300 mb-6">
+                            Our code is open for review by security experts worldwide. 
+                            We believe transparency builds trust.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <div class="security-badge glass rounded-lg p-4 flex items-center">
+                                <i class="fab fa-github text-2xl text-cyan-400 mr-3"></i>
+                                <span>GitHub Verified</span>
+                            </div>
+                            <div class="security-badge glass rounded-lg p-4 flex items-center">
+                                <i class="fas fa-file-code text-2xl text-purple-400 mr-3"></i>
+                                <span>Open Source</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">Independent Security Audits</h3>
+                        <p class="text-gray-300 mb-6">
+                            Regular third-party security assessments ensure our protections meet the highest standards.
+                        </p>
+                        <div class="flex flex-wrap gap-4">
+                            <div class="security-badge glass rounded-lg p-4 flex items-center">
+                                <i class="fas fa-award text-2xl text-cyan-400 mr-3"></i>
+                                <span>ISO 27001 Certified</span>
+                            </div>
+                            <div class="security-badge glass rounded-lg p-4 flex items-center">
+                                <i class="fas fa-shield-alt text-2xl text-purple-400 mr-3"></i>
+                                <span>Penetration Tested</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative fade-up">
+                    <div class="gradient-border rounded-2xl p-8">
+                        <div class="bg-midnight-800 rounded-xl p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <div class="text-xl font-bold">Security Dashboard</div>
+                                <div class="text-sm text-green-400 flex items-center">
+                                    <i class="fas fa-circle text-xs mr-2"></i> All Systems Secure
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span>End-to-End Encryption</span>
+                                    <span class="text-green-400"><i class="fas fa-check-circle"></i></span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Zero-Knowledge Architecture</span>
+                                    <span class="text-green-400"><i class="fas fa-check-circle"></i></span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Regular Security Audits</span>
+                                    <span class="text-green-400"><i class="fas fa-check-circle"></i></span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Open Source Verification</span>
+                                    <span class="text-green-400"><i class="fas fa-check-circle"></i></span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Two-Factor Authentication</span>
+                                    <span class="text-green-400"><i class="fas fa-check-circle"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist Section -->
+    <section id="waitlist" class="py-20 px-6 bg-gradient-to-br from-midnight-900 to-purple-900/20">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">Join the Privacy Revolution</h2>
+                <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
+                    Join 10,000+ people building the future of private communication. 
+                    First 1,000 users get lifetime premium features.
+                </p>
+                <div class="glass rounded-2xl p-8 max-w-2xl mx-auto">
+                    <form class="space-y-6">
+                        <div class="launchlist-widget" data-key-id="39fnTT" data-height="180px"></div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="terms" class="mr-2 h-5 w-5 text-cyan-500 rounded">
+                            <label for="terms" class="text-gray-300">
+                                I agree to receive updates and accept the <a href="#" class="text-cyan-400 hover:underline">Privacy Policy</a>
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="mt-8 flex flex-wrap justify-center gap-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-lock text-cyan-400 mr-2"></i>
+                        <span>No spam, ever</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-user-shield text-cyan-400 mr-2"></i>
+                        <span>Your data stays private</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-undo text-cyan-400 mr-2"></i>
+                        <span>Cancel anytime</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-lock text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold">Fade</span>
+                    </div>
+                    <p class="text-gray-400 mb-6">
+                        The most secure messaging platform for conversations that deserve to disappear.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-cyan-400">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-cyan-400">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-cyan-400">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Product</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Features</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Security</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Pricing</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Download</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Company</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">About</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Careers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6">Support</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Help Center</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-cyan-400">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-gray-800 text-center text-gray-500">
+                <p>© 2025 Fade. All rights reserved. Made with <i class="fas fa-heart text-red-500"></i> for privacy.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Fade-up animation on scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const fadeElements = document.querySelectorAll('.fade-up');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            
+            fadeElements.forEach(element => {
+                observer.observe(element);
+            });
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
